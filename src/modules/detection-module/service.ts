@@ -1,4 +1,5 @@
 import { DetectionRequest, DetectionResponse } from './dtos'
+import { analyzeApprovalRisks, ApprovalRisk } from './risk-checks'
 
 /**
  * DetectionService
@@ -7,30 +8,43 @@ import { DetectionRequest, DetectionResponse } from './dtos'
  * EVM compatible transaction (i.e. `DetectionRequest`)
  * and returns a `DetectionResponse`
  *
- * API Reference:
- * https://github.com/ironblocks/venn-custom-detection/blob/master/docs/requests-responses.docs.md
+ * This implementation focuses on detecting risky token approvals that could
+ * expose users to asset loss or unauthorized access.
  */
 export class DetectionService {
     /**
-     * Update this implementation code to insepct the `DetectionRequest`
-     * based on your custom business logic
+     * Analyzes a transaction for risky approval patterns
+     * 
+     * @param request The detection request containing transaction details
+     * @returns DetectionResponse indicating if any risks were detected
      */
     public static detect(request: DetectionRequest): DetectionResponse {
-        /**
-         * For this "Hello World" style boilerplate
-         * we're mocking detection results using
-         * some random value
-         */
-        const detectionResult = Math.random() < 0.5
+        const { trace } = request
+        const risks: ApprovalRisk[] = []
 
-        /**
-         * Wrap our response in a `DetectionResponse` object
-         */
+        // Analyze each call in the transaction trace
+        if (trace.calls) {
+            for (const call of trace.calls) {
+                const callRisks = analyzeApprovalRisks(call, trace.logs || [])
+                risks.push(...callRisks)
+            }
+        }
+
+        // If any risks were detected, mark the transaction as suspicious
+        const detected = risks.length > 0
+
+        // Create a detailed message if risks were found
+        const message = detected 
+            ? `Detected ${risks.length} approval risk(s): ${risks.map(r => r.message).join(', ')}`
+            : undefined
+
         return new DetectionResponse({
             request,
             detectionInfo: {
-                detected: detectionResult,
-            },
+                detected,
+                message,
+                error: false
+            }
         })
     }
 }

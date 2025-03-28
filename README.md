@@ -6,6 +6,89 @@
 ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)
 ![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white)
 
+# Venn Approval Risk Detector
+
+A custom detector for the Venn Network that identifies risky token approvals that could expose users to asset loss or unauthorized access.
+
+## Overview
+
+This detector analyzes EVM transactions to identify potentially dangerous token approvals. It focuses on several key risk patterns:
+
+1. **Infinite Approvals**: Detects when users grant unlimited token transfer permissions
+2. **EOA Approvals**: Identifies approvals granted to externally owned accounts instead of contracts
+3. **Batch Approvals**: Flags multiple token approvals in a single transaction
+4. **Automated Approvals**: Detects approvals that occur without direct user interaction
+
+## Risk Types
+
+### High Severity
+- **Infinite Approvals**: When a user approves the maximum possible amount (`uint256.max`), allowing unlimited token transfers
+- **EOA Approvals**: When tokens are approved to be spent by an externally owned account (EOA) instead of a smart contract
+
+### Medium Severity
+- **Batch Approvals**: Multiple token approvals detected in the same transaction
+- **Automated Approvals**: Approvals that occur without direct user interaction, potentially indicating automated/malicious behavior
+
+## Example Transactions
+
+### Infinite Approval
+```json
+{
+  "input": "0x095ea7b3000000000000000000000000...",
+  "value": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}
+```
+
+### Batch Approval
+```json
+{
+  "logs": [
+    {
+      "topics": ["0x095ea7b3...", "0x...", "0x..."]
+    },
+    {
+      "topics": ["0x095ea7b3...", "0x...", "0x..."]
+    }
+  ]
+}
+```
+
+## Implementation Details
+
+The detector is implemented in TypeScript and uses the Venn Custom Detector API. Key components:
+
+- `DetectionService`: Main service that processes transactions
+- `risk-checks.ts`: Contains the logic for identifying different types of approval risks
+- `dtos/`: Contains the request and response type definitions
+
+## Testing
+
+The detector can be tested using the Venn Security Sandbox. Example test cases:
+
+1. Normal approval transaction (should not trigger)
+2. Infinite approval transaction (should trigger)
+3. Batch approval transaction (should trigger)
+4. EOA approval transaction (should trigger)
+
+## Development
+
+1. Clone the repository
+2. Install dependencies: `yarn install`
+3. Run in development mode: `yarn dev`
+4. The detector will be available at `http://localhost:3000`
+
+## Deployment
+
+Build and deploy using Docker:
+
+```bash
+docker build -f Dockerfile . -t venn-approval-detector
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 # Venn Custom Detector boilerplate
 A boilerplate for getting started with Venn as a Security Provider. Use is as a starting point to build your own custom detectors on Venn Network.
 
