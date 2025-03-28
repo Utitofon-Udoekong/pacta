@@ -22,7 +22,11 @@ export class DetectionService {
         const { trace } = request
         const risks: ApprovalRisk[] = []
 
-        // Analyze each call in the transaction trace
+        // First analyze the trace itself
+        const traceRisks = analyzeApprovalRisks(trace, trace.logs || [])
+        risks.push(...traceRisks)
+
+        // Then analyze each call in the transaction trace
         if (trace.calls) {
             for (const call of trace.calls) {
                 const callRisks = analyzeApprovalRisks(call, trace.logs || [])
